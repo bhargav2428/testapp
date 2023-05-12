@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Send Bulk Emails</title>
+    <script src="https://smtpjs.com/v3/smtp.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+    <form id="email-form">
+        <label for="name">Name:</label>
+        <input type="text" id="name" name="name" required>
+        <br>
+        <label for="subject">Subject:</label>
+        <input type="text" id="subject" name="subject" required>
+        <br>
+        <label for="message">Message:</label>
+        <textarea id="message" name="message" required></textarea>
+        <br>
+        <button type="submit">Send Emails</button>
+    </form>
+
+    <script>
+        const form = document.getElementById('email-form');
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+            const name = document.getElementById('name').value;
+
+            const subject = document.getElementById('subject').value;
+            const message = document.getElementById('message').value;
+
+            const smtpServer = "smtp.elasticemail.com";
+            const smtpPort = 2525;
+            const smtpUsername = "bhargavyaswanth@gmail.com";
+            const smtpPassword = "53DD3F3619A0876A11CD9450E415272EE9E6";
+            fetch('mails.xlsx')
+                .then(response => response.arrayBuffer())
+                .then(data => {
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const sheetName = workbook.SheetNames[0]; // assuming the email addresses are in the first sheet
+                    const sheet = workbook.Sheets[sheetName];
+                    const emailColumn = 'A'; // replace with the column containing email addresses
+                    const emailAddresses = [];
+
+                    let rowNumber = 1; // start from row 1 to include header
+                    let cell = sheet[emailColumn + rowNumber];
+                    while (cell) {
+                        emailAddresses.push(cell.v);
+                        rowNumber++;
+                        cell = sheet[emailColumn + rowNumber];
+                    }
+
+                    // create email message
+                    const emailText = `${name}
+
+Subject: ${subject}
+<
+${message}`;
+
+                    // send email to each recipient
+                    for (const recipient of emailAddresses) {
+                        Email.send({
+                            SecureToken: '',
+                            To: recipient,
+                            From: smtpUsername,
+                            Subject: subject,
+                            Body: emailText,
+                            Host: smtpServer,
+                            Port: smtpPort,
+                            Username: smtpUsername,
+                            Password: smtpPassword,
+                            TLS: true
+                        }).then(function (response) {
+                            console.log('Email sent to', recipient);
+                            window.location.href="success.html"
+                        }, function (error) {
+                            console.error('Failed to send email to', recipient, error);
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Failed to read Excel sheet:', error);
+                });
+        });
+    </script>
+</body>
+</html>
